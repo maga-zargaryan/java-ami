@@ -18,6 +18,11 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
+      - name: Verify Terraform
+        run: |
+          which terraform
+          terraform version
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
