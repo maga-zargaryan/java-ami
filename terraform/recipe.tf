@@ -4,9 +4,9 @@ resource "aws_imagebuilder_image_recipe" "java" {
   parent_image = "ami-0bf05131040dbf2fc"
   version      = "1.0.0"
 
-#  component {
-#    component_arn = aws_imagebuilder_component.java.arn
-#  }
+  component {
+    component_arn = aws_imagebuilder_component.java.arn
+  }
 
   block_device_mapping {
     device_name = "/dev/xvda"
