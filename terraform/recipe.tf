@@ -1,7 +1,7 @@
 resource "aws_imagebuilder_image_recipe" "java" {
   name         = "java-base"
   description  = "Amazon Linux 2023 with Java runtime"
-  parent_image = "ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64"
+  parent_image = "ami-0bf05131040dbf2fc"
   version      = "1.0.0"
 
   component {
