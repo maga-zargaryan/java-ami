@@ -1,0 +1,57 @@
+name: Deploy
+
+# Apply the pipeline definition, then build a new image when the recipe or
+# components changed. Scheduled patch builds run inside Image Builder itself.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "terraform/**"
+      - "components/**"
+      - ".github/workflows/deploy.yml"
+      - ".github/actions/terraform/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+env:
+  TERRAFORM_VERSION: "1.15.8"
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+
+jobs:
+  apply:
+    name: apply
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: shared
+    outputs:
+      pipeline_arn: ${{ steps.outputs.outputs.pipeline_arn }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/terraform
+        with:
+          working-directory: terraform
+          role-arn: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          terraform-version: ${{ env.TERRAFORM_VERSION }}
+      - name: Apply
+        working-directory: terraform
+        run: terraform apply -lock-timeout=5m -auto-approve
+      - name: Read outputs
+        id: outputs
+        working-directory: terraform
+        run: echo "pipeline_arn=$(terraform output -raw image_pipeline_arn)" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: build image
+    needs: apply
+    uses: ./.github/workflows/build.yml
+    with:
+      pipeline_arn: ${{ needs.apply.outputs.pipeline_arn }}
