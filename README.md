@@ -11,7 +11,7 @@ Amazon Linux 2023 arm64 (latest at build time)
   └─ reboot-test-linux       AWS managed test
         │  validate + test phases must pass
         ▼
-  AMI java-base-arm64-<date>  ──►  SSM /java-platform/ami/java-base  ──►  java-infra
+  AMI java-base-arm64-<date>  ──►  SSM /imagebuilder/java-platform/java-base  ──►  java-infra
 ```
 
 ## Design
@@ -23,7 +23,7 @@ Amazon Linux 2023 arm64 (latest at build time)
 | Network | Private build subnet, no internet; AWS reached through VPC endpoints; S3 endpoint restricted to Image Builder, SSM and AL2023 repositories |
 | Quality gates | Component `validate` and `test` phases, AWS reboot test, image tests enabled |
 | Security | IMDSv2 required, encrypted gp3 root volume, roles created under the platform permissions boundary |
-| Distribution | Tagged AMI; latest AMI ID published to SSM (`aws:ec2:image`) for java-infra |
+| Distribution | Tagged AMI; latest AMI ID published to SSM `/imagebuilder/java-platform/java-base` (`aws:ec2:image`) for java-infra. The path is fixed by the Image Builder service-linked role, which may only write under `/imagebuilder/` |
 | Housekeeping | Lifecycle policy keeps the 5 most recent images (AMIs and snapshots) |
 
 ## Changing the image

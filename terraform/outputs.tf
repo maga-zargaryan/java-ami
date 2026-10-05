@@ -7,5 +7,5 @@ output "image_recipe_arn" {
 }
 
 output "ami_ssm_parameter" {
-  value = "/java-platform/ami/${var.image_name}"
+  value = local.ami_parameter_name
 }
