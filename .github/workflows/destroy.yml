@@ -1,0 +1,62 @@
+name: Destroy
+
+# Removes the pipeline definition. AMIs already built are AWS resources outside
+# Terraform; the lifecycle policy prunes them while it exists, the step below
+# removes the rest.
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type "java-ami" to confirm
+        type: string
+        required: true
+      delete_images:
+        description: Also deregister all java-base AMIs and delete their snapshots
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+env:
+  TERRAFORM_VERSION: "1.15.8"
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+
+jobs:
+  destroy:
+    name: destroy
+    if: inputs.confirm == 'java-ami'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: shared
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/terraform
+        with:
+          working-directory: terraform
+          role-arn: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          terraform-version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Destroy
+        working-directory: terraform
+        run: terraform destroy -lock-timeout=5m -auto-approve
+
+      - name: Delete built images
+        if: inputs.delete_images
+        run: |
+          for AMI in $(aws ec2 describe-images --owners self \
+              --filters Name=tag:Project,Values=java-platform Name=tag:Image,Values=java-base \
+              --query 'Images[].ImageId' --output text); do
+            SNAPSHOTS=$(aws ec2 describe-images --image-ids "$AMI" \
+              --query 'Images[].BlockDeviceMappings[].Ebs.SnapshotId' --output text)
+            aws ec2 deregister-image --image-id "$AMI"
+            for SNAP in $SNAPSHOTS; do aws ec2 delete-snapshot --snapshot-id "$SNAP"; done
+            echo "Deleted $AMI ($SNAPSHOTS)"
+          done

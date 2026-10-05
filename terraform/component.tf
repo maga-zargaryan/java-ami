@@ -1,8 +1,14 @@
-resource "aws_imagebuilder_component" "java" {
+resource "aws_imagebuilder_component" "java_runtime" {
   name        = "java-runtime"
-  description = "Java runtime for Java application EC2 instances"
+  description = "Amazon Corretto ${var.java_version}, CloudWatch agent and EFS utilities"
   platform    = "Linux"
-  version     = "1.0.0"
+  version     = var.component_version
 
-  data = file("${path.module}/../components/install-java.yml")
+  data = templatefile("${path.module}/../components/java-runtime.yml", {
+    java_version = var.java_version
+  })
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }

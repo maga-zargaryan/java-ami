@@ -1,18 +1,53 @@
-resource "aws_imagebuilder_image_pipeline" "java" {
-  name = "java-base"
+resource "aws_imagebuilder_image_pipeline" "this" {
+  name        = var.image_name
+  description = "Builds, tests and distributes the ${var.image_name} AMI"
 
-  image_recipe_arn                 = aws_imagebuilder_image_recipe.java.arn
-  infrastructure_configuration_arn = aws_imagebuilder_infrastructure_configuration.java.arn
-  distribution_configuration_arn   = aws_imagebuilder_distribution_configuration.java.arn
+  image_recipe_arn                 = aws_imagebuilder_image_recipe.this.arn
+  infrastructure_configuration_arn = aws_imagebuilder_infrastructure_configuration.this.arn
+  distribution_configuration_arn   = aws_imagebuilder_distribution_configuration.this.arn
+  enhanced_image_metadata_enabled  = true
+  status                           = "ENABLED"
 
-  status = "DISABLED"
-
-  schedule {
-    schedule_expression                = "cron(0 0 ? * SUN *)"
-    pipeline_execution_start_condition = "EXPRESSION_MATCH_AND_DEPENDENCY_UPDATES_AVAILABLE"
+  image_tests_configuration {
+    image_tests_enabled = true
+    timeout_minutes     = 60
   }
 
-  depends_on = [
-    aws_iam_service_linked_role.image_builder
-  ]
+  # Rebuild on a schedule only when the parent image or a component has an update.
+  schedule {
+    schedule_expression                = var.pipeline_schedule
+    pipeline_execution_start_condition = "EXPRESSION_MATCH_AND_DEPENDENCY_UPDATES_AVAILABLE"
+  }
+}
+
+resource "aws_imagebuilder_lifecycle_policy" "this" {
+  name           = var.image_name
+  description    = "Keep the ${var.images_to_keep} most recent ${var.image_name} images"
+  execution_role = aws_iam_role.lifecycle.arn
+  resource_type  = "AMI_IMAGE"
+
+  policy_detail {
+    action {
+      type = "DELETE"
+
+      include_resources {
+        amis      = true
+        snapshots = true
+      }
+    }
+
+    filter {
+      type  = "COUNT"
+      value = var.images_to_keep
+    }
+  }
+
+  resource_selection {
+    recipe {
+      name             = aws_imagebuilder_image_recipe.this.name
+      semantic_version = "x.x.x"
+    }
+  }
+
+  depends_on = [aws_iam_role_policy_attachment.lifecycle]
 }
