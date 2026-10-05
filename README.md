@@ -14,6 +14,26 @@ Amazon Linux 2023 arm64 (latest at build time)
   AMI java-base-arm64-<date>  ──►  SSM /imagebuilder/java-platform/java-base  ──►  java-infra
 ```
 
+## Diagrams
+
+### How the four repositories fit together
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/repositories.dark.svg">
+  <img alt="How the four repositories fit together: Each column is one repository: its workflows, the AWS services it creates, and what happens in it, in order. Repositories hand values to each other only through SSM Parameter Store." src="docs/diagrams/repositories.light.svg">
+</picture>
+
+Each column is one repository: its workflows, the AWS services it creates, and what happens in it, in order. Repositories hand values to each other only through SSM Parameter Store.
+
+### Image pipeline
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/image-pipeline.dark.svg">
+  <img alt="Image pipeline: Patch, install and validate on a build instance, snapshot to an AMI, test it on a fresh instance, then publish the AMI ID to SSM. Any failure stops the image." src="docs/diagrams/image-pipeline.light.svg">
+</picture>
+
+Patch, install and validate on a build instance, snapshot to an AMI, test it on a fresh instance, then publish the AMI ID to SSM. Any failure stops the image.
+
 ## Design
 
 | Concern | Decision |
