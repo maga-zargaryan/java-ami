@@ -1,0 +1,75 @@
+name: Build image
+
+# Starts an Image Builder pipeline execution and waits for the result, so a
+# failed build or failed image test fails the workflow.
+on:
+  workflow_call:
+    inputs:
+      pipeline_arn:
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      pipeline_arn:
+        description: Image pipeline ARN (defaults to the java-base pipeline)
+        type: string
+        required: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    environment: shared
+    steps:
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          role-session-name: gha-${{ github.run_id }}-${{ github.run_attempt }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Start pipeline execution
+        id: start
+        env:
+          PIPELINE_ARN: ${{ inputs.pipeline_arn }}
+        run: |
+          if [[ -z "$PIPELINE_ARN" ]]; then
+            PIPELINE_ARN=$(aws imagebuilder list-image-pipelines \
+              --filters name=name,values=java-base \
+              --query 'imagePipelineList[0].arn' --output text)
+          fi
+          IMAGE_ARN=$(aws imagebuilder start-image-pipeline-execution \
+            --image-pipeline-arn "$PIPELINE_ARN" \
+            --query imageBuildVersionArn --output text)
+          echo "image_arn=$IMAGE_ARN" >> "$GITHUB_OUTPUT"
+          echo "Started $IMAGE_ARN"
+
+      - name: Wait for build and tests
+        env:
+          IMAGE_ARN: ${{ steps.start.outputs.image_arn }}
+        run: |
+          while true; do
+            STATUS=$(aws imagebuilder get-image --image-build-version-arn "$IMAGE_ARN" \
+              --query 'image.state.status' --output text)
+            echo "$(date -u +%H:%M:%S) $STATUS"
+            case "$STATUS" in
+              AVAILABLE) break ;;
+              FAILED|CANCELLED|DEPRECATED|DELETED)
+                aws imagebuilder get-image --image-build-version-arn "$IMAGE_ARN" \
+                  --query 'image.state.reason' --output text
+                exit 1 ;;
+            esac
+            sleep 60
+          done
+          AMI_ID=$(aws imagebuilder get-image --image-build-version-arn "$IMAGE_ARN" \
+            --query 'image.outputResources.amis[0].image' --output text)
+          {
+            echo "### Image available"
+            echo "- Image: \`$IMAGE_ARN\`"
+            echo "- AMI: \`$AMI_ID\`"
+            echo "- Published to \`/java-platform/ami/java-base\`"
+          } >> "$GITHUB_STEP_SUMMARY"

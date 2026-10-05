@@ -1,0 +1,43 @@
+name: java-runtime
+description: Amazon Corretto ${java_version} headless, CloudWatch agent and EFS utilities for Java services
+schemaVersion: 1.0
+
+phases:
+  - name: build
+    steps:
+      - name: InstallRuntime
+        action: ExecuteBash
+        inputs:
+          commands:
+            - set -euo pipefail
+            - dnf install -y java-${java_version}-amazon-corretto-headless amazon-cloudwatch-agent amazon-efs-utils
+            - dnf clean all
+
+      - name: ConfigureTimezone
+        action: ExecuteBash
+        inputs:
+          commands:
+            - timedatectl set-timezone UTC
+
+  - name: validate
+    steps:
+      - name: ValidateRuntime
+        action: ExecuteBash
+        inputs:
+          commands:
+            - set -euo pipefail
+            - java -version 2>&1 | grep -q 'version "${java_version}'
+            - rpm -q amazon-cloudwatch-agent amazon-efs-utils
+
+  - name: test
+    steps:
+      - name: TestRuntime
+        action: ExecuteBash
+        inputs:
+          commands:
+            - set -euo pipefail
+            - java -version 2>&1 | grep -q 'version "${java_version}'
+            - test -x /sbin/mount.efs
+            - test -x /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl
+            - systemctl is-enabled amazon-ssm-agent
+            - test "$(timedatectl show --property=Timezone --value)" = "UTC"
