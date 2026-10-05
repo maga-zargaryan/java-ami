@@ -14,6 +14,26 @@ Amazon Linux 2023 arm64 (latest at build time)
   AMI java-base-arm64-<date>  ──►  SSM /imagebuilder/java-platform/java-base  ──►  java-infra
 ```
 
+## Diagrams
+
+### How the four repositories fit together
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/repositories.dark.svg">
+  <img alt="How the four repositories fit together: Each column is one repository: its workflows, the AWS services it creates, and what happens in it, in order. Repositories hand values to each other only through SSM Parameter Store." src="docs/diagrams/repositories.light.svg">
+</picture>
+
+Each column is one repository: its workflows, the AWS services it creates, and what happens in it, in order. Repositories hand values to each other only through SSM Parameter Store.
+
+### Image pipeline
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/image-pipeline.dark.svg">
+  <img alt="Image pipeline: Patch, install and validate on a build instance, snapshot to an AMI, test it on a fresh instance, then publish the AMI ID to SSM. Any failure stops the image." src="docs/diagrams/image-pipeline.light.svg">
+</picture>
+
+Patch, install and validate on a build instance, snapshot to an AMI, test it on a fresh instance, then publish the AMI ID to SSM. Any failure stops the image.
+
 ## Design
 
 | Concern | Decision |
@@ -39,7 +59,7 @@ Merging applies the definition and builds a new image; the workflow fails if the
 
 | Workflow | Trigger | What it does |
 |---|---|---|
-| `pr.yml` | Pull request | fmt, validate, tflint, Trivy, read-only plan; `ci` is the required check |
+| `pr.yml` | Pull request | fmt, validate, tflint, Trivy, read-only plan (skipped when nothing under `terraform/` or `components/` changed); `ci` is the required check |
 | `deploy.yml` | Merge to `main` | apply, then run `build.yml` |
 | `build.yml` | Manual / called | start a pipeline execution and wait for `AVAILABLE` |
 | `destroy.yml` | Manual | destroy the pipeline and optionally deregister built AMIs |

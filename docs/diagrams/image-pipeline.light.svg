@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 1100 245" role="img" aria-label="Image Builder pipeline: patch, install and validate on a build instance, snapshot to an AMI, test it on a fresh instance, then publish the AMI ID to SSM. Any failure stops the image." xmlns="http://www.w3.org/2000/svg" width="1100" height="245"><style>text{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif} .d-text{fill:#151a22} .d-muted{fill:#5d6878} .d-mono{fill:#3c4656;font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace} .d-edge{fill:#3c4656;font-weight:600} .d-labelbg{fill:#ffffff} .d-line{stroke:#3c4656} .d-arrowhead{fill:#3c4656} .d-arrowhead-accent{fill:#E8590C} .d-box{fill:#ffffff;stroke:#d5dbe3} .d-note{fill:#eef1f5;stroke:#d5dbe3} .d-abbr{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;letter-spacing:.02em}</style><rect x="0" y="0" width="1100" height="245" rx="10" fill="#ffffff"/><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-arrowhead"/></marker><marker id="as" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-arrowhead"/></marker><marker id="ah-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-arrowhead-accent"/></marker><marker id="as-accent" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-arrowhead-accent"/></marker></defs><rect x="20" y="60" width="190" height="74" rx="6" class="d-box" stroke-width="1.4"/>
+<text x="115.0" y="78" font-size="12" text-anchor="middle" font-weight="700" class="d-text">Parent image</text>
+<text x="115.0" y="94" font-size="10.5" text-anchor="middle" font-weight="400" class="d-muted">amazon-linux-2023-arm64</text>
+<text x="115.0" y="108" font-size="10.5" text-anchor="middle" font-weight="400" class="d-muted">x.x.x = latest at build</text>
+<polyline points="210,97 236,97" fill="none" class="d-line" stroke-width="1.6" marker-end="url(#ah)"/>
+<rect x="236" y="60" width="190" height="74" rx="6" class="d-box" stroke-width="1.4"/>
+<text x="331.0" y="78" font-size="12" text-anchor="middle" font-weight="700" class="d-text">Build instance</text>
+<text x="331.0" y="94" font-size="10.5" text-anchor="middle" font-weight="400" class="d-muted">update-linux (OS patches)</text>
+<text x="331.0" y="108" font-size="10.5" text-anchor="middle" font-weight="400" class="d-muted">java-runtime: build + validate</text>
+<polyline points="426,97 452,97" fill="none" class="d-line" stroke-width="1.6" marker-end="url(#ah)"/>
+<rect x="452" y="60" width="190" height="74" rx="6" class="d-box" stroke-width="1.4"/>
+<text x="547.0" y="78" font-size="12" text-anchor="middle" font-weight="700" class="d-text">Snapshot → AMI</text>
+<text x="547.0" y="94" font-size="10.5" text-anchor="middle" font-weight="400" class="d-muted">encrypted gp3, 20 GiB</text>
+<text x="547.0" y="108" font-size="10.5" text-anchor="middle" font-weight="400" class="d-muted">tags: Project, Image, Java</text>
+<polyline points="642,97 668,97" fill="none" class="d-line" stroke-width="1.6" marker-end="url(#ah)"/>
+<rect x="668" y="60" width="190" height="74" rx="6" class="d-box" stroke-width="1.4"/>
+<text x="763.0" y="78" font-size="12" text-anchor="middle" font-weight="700" class="d-text">Test instance</text>
+<text x="763.0" y="94" font-size="10.5" text-anchor="middle" font-weight="400" class="d-muted">java-runtime: test phase</text>
+<text x="763.0" y="108" font-size="10.5" text-anchor="middle" font-weight="400" class="d-muted">reboot-test-linux</text>
+<polyline points="858,97 884,97" fill="none" class="d-line" stroke-width="1.6" marker-end="url(#ah)"/>
+<rect x="884" y="60" width="190" height="74" rx="6" stroke="#E8590C" fill="#E8590C" fill-opacity="0.08" stroke-width="1.4"/>
+<text x="979.0" y="78" font-size="12" text-anchor="middle" font-weight="700" class="d-text">Distribute</text>
+<text x="979.0" y="94" font-size="10.5" text-anchor="middle" font-weight="400" class="d-muted">/imagebuilder/java-platform/</text>
+<text x="979.0" y="108" font-size="10.5" text-anchor="middle" font-weight="400" class="d-muted">java-base ← AMI ID</text>
+<text x="20" y="30" font-size="11.5" text-anchor="start" font-weight="700" class="d-text">Triggers:</text>
+<text x="88" y="30" font-size="11" text-anchor="start" font-weight="400" class="d-muted">deploy.yml → build.yml after every merge  ·  build.yml by hand  ·  weekly cron(0 3 ? * SUN *) only if parent/components changed</text>
+<rect x="20" y="170" width="380" height="60" rx="6" class="d-box" stroke-width="1.4"/>
+<text x="210.0" y="188" font-size="12" text-anchor="middle" font-weight="700" class="d-text">Fails closed</text>
+<text x="210.0" y="204" font-size="10.5" text-anchor="middle" font-weight="400" class="d-muted">any failed step or test → image FAILED</text>
+<text x="210.0" y="218" font-size="10.5" text-anchor="middle" font-weight="400" class="d-muted">build.yml polls every 60 s and fails the workflow</text>
+<rect x="420" y="170" width="340" height="60" rx="6" class="d-box" stroke-width="1.4"/>
+<text x="590.0" y="188" font-size="12" text-anchor="middle" font-weight="700" class="d-text">Lifecycle policy</text>
+<text x="590.0" y="204" font-size="10.5" text-anchor="middle" font-weight="400" class="d-muted">keeps the 5 newest images</text>
+<text x="590.0" y="218" font-size="10.5" text-anchor="middle" font-weight="400" class="d-muted">deletes older AMIs + snapshots</text>
+<rect x="780" y="170" width="300" height="60" rx="6" class="d-box" stroke-width="1.4"/>
+<text x="930.0" y="188" font-size="12" text-anchor="middle" font-weight="700" class="d-text">Consumers</text>
+<text x="930.0" y="204" font-size="10.5" text-anchor="middle" font-weight="400" class="d-muted">java-infra launch template reads</text>
+<text x="930.0" y="218" font-size="10.5" text-anchor="middle" font-weight="400" class="d-muted">the SSM parameter at plan time</text>
+<polyline points="970,134 970,168" fill="none" class="d-line" stroke-width="1.6" marker-end="url(#ah)"/></svg>
