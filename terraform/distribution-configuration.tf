@@ -18,9 +18,10 @@ resource "aws_imagebuilder_distribution_configuration" "this" {
       }
     }
 
-    # java-infra resolves the AMI from this parameter.
+    # java-infra resolves the AMI from this parameter. The Image Builder
+    # service-linked role may only write parameters under /imagebuilder/.
     ssm_parameter_configuration {
-      parameter_name = "/java-platform/ami/${var.image_name}"
+      parameter_name = local.ami_parameter_name
       data_type      = "aws:ec2:image"
     }
   }
