@@ -71,5 +71,5 @@ jobs:
             echo "### Image available"
             echo "- Image: \`$IMAGE_ARN\`"
             echo "- AMI: \`$AMI_ID\`"
-            echo "- Published to \`/java-platform/ami/java-base\`"
+            echo "- Published to \`/imagebuilder/java-platform/java-base\`"
           } >> "$GITHUB_STEP_SUMMARY"
