@@ -38,6 +38,26 @@ variable "recipe_version" {
   }
 }
 
+variable "app_version" {
+  description = "Application release baked into the image (s3://<artifacts>/java-app/<app_version>/app.jar)."
+  type        = string
+
+  validation {
+    condition     = can(regex("^\\d+\\.\\d+\\.\\d+$", var.app_version))
+    error_message = "app_version must be a semantic version (major.minor.patch)."
+  }
+}
+
+variable "app_component_version" {
+  description = "Semantic version of the java-app component. Bump it on every change to components/java-app.yml."
+  type        = string
+
+  validation {
+    condition     = can(regex("^\\d+\\.\\d+\\.\\d+$", var.app_component_version))
+    error_message = "app_component_version must be a semantic version (major.minor.patch)."
+  }
+}
+
 variable "component_version" {
   description = "Semantic version of the Java runtime component. Components are immutable: bump it on every change."
   type        = string

@@ -12,3 +12,17 @@ resource "aws_imagebuilder_component" "java_runtime" {
     create_before_destroy = true
   }
 }
+
+# Bakes the release JAR, its systemd services and the boot-time configurator into the image.
+resource "aws_imagebuilder_component" "java_app" {
+  name        = "java-app"
+  description = "Java application release, services and boot-time configuration"
+  platform    = "Linux"
+  version     = var.app_component_version
+
+  data = file("${path.module}/../components/java-app.yml")
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}

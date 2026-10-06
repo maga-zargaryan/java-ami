@@ -1,13 +1,18 @@
 aws_region = "eu-west-1"
 
-image_name           = "java-base"
+image_name           = "java-app"
 architecture         = "arm64"
 build_instance_types = ["t4g.medium"]
 java_version         = 21
 
-# Bump on every change to the recipe or the component (they are immutable).
-recipe_version    = "1.0.0"
-component_version = "1.0.0"
+# Application release baked into the image.
+app_version = "0.1.0"
+
+# Recipes and components are immutable: bump recipe_version on every release
+# (a new app_version is a recipe change) and a component version when its YAML changes.
+recipe_version        = "1.0.0"
+component_version     = "1.0.0"
+app_component_version = "1.0.0"
 
 root_volume_size = 20
 

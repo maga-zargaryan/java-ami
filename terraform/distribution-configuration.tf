@@ -6,8 +6,8 @@ resource "aws_imagebuilder_distribution_configuration" "this" {
     region = var.aws_region
 
     ami_distribution_configuration {
-      name        = "${var.image_name}-${var.architecture}-{{ imagebuilder:buildDate }}"
-      description = "Amazon Linux 2023 (${var.architecture}) with Java ${var.java_version}"
+      name        = "${var.image_name}-${var.app_version}-${var.architecture}-{{ imagebuilder:buildDate }}"
+      description = "Java application ${var.app_version} on Amazon Linux 2023 (${var.architecture}), Java ${var.java_version}"
 
       ami_tags = {
         Name         = var.image_name
@@ -15,6 +15,7 @@ resource "aws_imagebuilder_distribution_configuration" "this" {
         Image        = var.image_name
         Architecture = var.architecture
         Java         = tostring(var.java_version)
+        AppVersion   = var.app_version
       }
     }
 

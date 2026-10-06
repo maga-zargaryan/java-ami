@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
     inputs:
       pipeline_arn:
-        description: Image pipeline ARN (defaults to the java-base pipeline)
+        description: Image pipeline ARN (defaults to the java-app pipeline)
         type: string
         required: false
 
@@ -39,7 +39,7 @@ jobs:
         run: |
           if [[ -z "$PIPELINE_ARN" ]]; then
             PIPELINE_ARN=$(aws imagebuilder list-image-pipelines \
-              --filters name=name,values=java-base \
+              --filters name=name,values=java-app \
               --query 'imagePipelineList[0].arn' --output text)
           fi
           IMAGE_ARN=$(aws imagebuilder start-image-pipeline-execution \
@@ -71,5 +71,5 @@ jobs:
             echo "### Image available"
             echo "- Image: \`$IMAGE_ARN\`"
             echo "- AMI: \`$AMI_ID\`"
-            echo "- Published to \`/imagebuilder/java-platform/java-base\`"
+            echo "- Published to \`/imagebuilder/java-platform/java-app\`"
           } >> "$GITHUB_STEP_SUMMARY"

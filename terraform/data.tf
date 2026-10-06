@@ -24,3 +24,8 @@ data "aws_ssm_parameter" "build_subnet_id" {
 data "aws_ssm_parameter" "build_security_group_id" {
   name = "/java-platform/shared/build_security_group_id"
 }
+
+# Release artifacts published by infra-bootstrap.
+data "aws_ssm_parameter" "artifacts_bucket" {
+  name = "/java-platform/artifacts_bucket"
+}
