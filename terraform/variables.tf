@@ -38,6 +38,12 @@ variable "recipe_version" {
   }
 }
 
+variable "git_commit" {
+  description = "java-ami commit the image definition was applied from; tagged on every AMI for traceability. Set by CI."
+  type        = string
+  default     = "local"
+}
+
 variable "app_version" {
   description = "Application release baked into the image (s3://<artifacts>/java-app/<app_version>/app.jar)."
   type        = string

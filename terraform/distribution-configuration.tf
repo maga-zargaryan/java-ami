@@ -16,6 +16,8 @@ resource "aws_imagebuilder_distribution_configuration" "this" {
         Architecture = var.architecture
         Java         = tostring(var.java_version)
         AppVersion   = var.app_version
+        GitCommit    = var.git_commit
+        SourceRepo   = "maga-zargaryan/java-ami"
       }
     }
   }
