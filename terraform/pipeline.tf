@@ -22,7 +22,7 @@ resource "aws_imagebuilder_image_pipeline" "this" {
 
 resource "aws_imagebuilder_lifecycle_policy" "this" {
   name           = var.image_name
-  description    = "Keep the ${var.images_to_keep} most recent ${var.image_name} images"
+  description    = "Keep the ${var.images_to_keep} most recent ${var.image_name} images, plus any in use"
   execution_role = aws_iam_role.lifecycle.arn
   resource_type  = "AMI_IMAGE"
 
@@ -39,6 +39,17 @@ resource "aws_imagebuilder_lifecycle_policy" "this" {
     filter {
       type  = "COUNT"
       value = var.images_to_keep
+    }
+
+    # Never delete an AMI an environment still runs: java-infra tags the AMI it
+    # deploys with InUse-<environment>=true.
+    exclusion_rules {
+      amis {
+        tag_map = {
+          "InUse-dev"  = "true"
+          "InUse-prod" = "true"
+        }
+      }
     }
   }
 

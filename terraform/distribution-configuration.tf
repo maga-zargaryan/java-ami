@@ -1,6 +1,6 @@
 resource "aws_imagebuilder_distribution_configuration" "this" {
   name        = var.image_name
-  description = "Distributes ${var.image_name} AMIs and publishes the latest AMI ID to SSM"
+  description = "Distributes tagged ${var.image_name} AMIs; consumers pin them by AMI ID"
 
   distribution {
     region = var.aws_region
@@ -17,13 +17,6 @@ resource "aws_imagebuilder_distribution_configuration" "this" {
         Java         = tostring(var.java_version)
         AppVersion   = var.app_version
       }
-    }
-
-    # java-infra resolves the AMI from this parameter. The Image Builder
-    # service-linked role may only write parameters under /imagebuilder/.
-    ssm_parameter_configuration {
-      parameter_name = local.ami_parameter_name
-      data_type      = "aws:ec2:image"
     }
   }
 }

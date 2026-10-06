@@ -7,8 +7,6 @@ locals {
   partition    = data.aws_partition.current.partition
   boundary_arn = "arn:${local.partition}:iam::${local.account_id}:policy/java-platform-permissions-boundary"
 
-  ami_parameter_name = "/imagebuilder/java-platform/${var.image_name}"
-
   parent_image = "arn:${local.partition}:imagebuilder:${var.aws_region}:aws:image/amazon-linux-2023-${var.architecture}/x.x.x"
   aws_component = {
     update_linux = "arn:${local.partition}:imagebuilder:${var.aws_region}:aws:component/update-linux/x.x.x"

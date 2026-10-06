@@ -71,5 +71,5 @@ jobs:
             echo "### Image available"
             echo "- Image: \`$IMAGE_ARN\`"
             echo "- AMI: \`$AMI_ID\`"
-            echo "- Published to \`/imagebuilder/java-platform/java-app\`"
+            echo "- Pin it in java-infra: \`ami_id = \"$AMI_ID\"\` in terraform/environments/dev/terraform.tfvars"
           } >> "$GITHUB_STEP_SUMMARY"
