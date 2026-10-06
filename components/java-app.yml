@@ -27,8 +27,11 @@ phases:
         inputs:
           commands:
             - set -euo pipefail
-            - aws s3 cp --only-show-errors "s3://{{ ArtifactsBucket }}/java-app/{{ AppVersion }}/app.jar" /opt/java-app/app.jar
-            - aws s3 cp --only-show-errors "s3://{{ ArtifactsBucket }}/java-app/{{ AppVersion }}/app.jar.sha256" /opt/java-app/app.jar.sha256
+            # Regional S3 endpoint only: the build subnet reaches S3 through the regional gateway endpoint.
+            - TOKEN=$(curl -sS -X PUT http://169.254.169.254/latest/api/token -H "X-aws-ec2-metadata-token-ttl-seconds: 300")
+            - REGION=$(curl -sS -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/region)
+            - aws s3 cp --region "$REGION" --only-show-errors "s3://{{ ArtifactsBucket }}/java-app/{{ AppVersion }}/app.jar" /opt/java-app/app.jar
+            - aws s3 cp --region "$REGION" --only-show-errors "s3://{{ ArtifactsBucket }}/java-app/{{ AppVersion }}/app.jar.sha256" /opt/java-app/app.jar.sha256
             - cd /opt/java-app && echo "$(cut -d' ' -f1 app.jar.sha256)  app.jar" | sha256sum --check --strict
             - chown javaapp:javaapp /opt/java-app/app.jar && chmod 0440 /opt/java-app/app.jar
             - echo "{{ AppVersion }}" > /etc/java-app/version
