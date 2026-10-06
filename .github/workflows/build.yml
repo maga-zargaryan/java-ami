@@ -71,5 +71,35 @@ jobs:
             echo "### Image available"
             echo "- Image: \`$IMAGE_ARN\`"
             echo "- AMI: \`$AMI_ID\`"
-            echo "- Pin it in java-infra: \`ami_id = \"$AMI_ID\"\` in terraform/environments/dev/terraform.tfvars"
+            echo "- A pull request pinning dev to it is opened in java-infra"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Token for java-infra
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          repositories: java-infra
+
+      # Dev is pinned to the new AMI by pull request; prod is promoted later from java-infra.
+      - name: Open the dev pull request in java-infra
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          IMAGE_ARN: ${{ steps.start.outputs.image_arn }}
+        run: |
+          AMI_ID=$(aws imagebuilder get-image --image-build-version-arn "$IMAGE_ARN" \
+            --query 'image.outputResources.amis[0].image' --output text)
+          APP_VERSION=$(aws ec2 describe-images --image-ids "$AMI_ID" \
+            --query "Images[0].Tags[?Key=='AppVersion'].Value | [0]" --output text)
+          git clone --quiet "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY_OWNER}/java-infra.git" java-infra
+          cd java-infra
+          BRANCH="deploy/dev-$AMI_ID"
+          git switch -c "$BRANCH"
+          sed -i -E "s/^(ami_id *= *)\"[^\"]*\"/\1\"$AMI_ID\"/" terraform/environments/dev/terraform.tfvars
+          git -c user.name="java-platform-release[bot]" -c user.email="java-platform-release[bot]@users.noreply.github.com" \
+            commit -qam "Deploy app AMI $AMI_ID (java-app $APP_VERSION) to dev"
+          git push --quiet origin "$BRANCH"
+          gh pr create --repo "${GITHUB_REPOSITORY_OWNER}/java-infra" --head "$BRANCH" \
+            --title "Deploy java-app $APP_VERSION ($AMI_ID) to dev" \
+            --body "New app AMI \`$AMI_ID\` built and tested by ${GITHUB_REPOSITORY} ([run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)). Merging rolls dev to it. Promote to prod afterwards with the **Promote** workflow."

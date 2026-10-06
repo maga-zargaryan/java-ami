@@ -5,8 +5,9 @@ architecture         = "arm64"
 build_instance_types = ["t4g.medium"]
 java_version         = 21
 
-# Application release baked into the image.
+# Application release baked into the image. Set by java-app's release pull request.
 app_version = "0.1.0"
+app_commit  = "manual-upload"
 
 # Recipes and components are immutable: bump recipe_version on every release
 # (a new app_version is a recipe change) and a component version when its YAML changes.

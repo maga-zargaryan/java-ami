@@ -44,6 +44,11 @@ variable "git_commit" {
   default     = "local"
 }
 
+variable "app_commit" {
+  description = "java-app commit the baked release was built from (set by the java-app release pull request)."
+  type        = string
+}
+
 variable "app_version" {
   description = "Application release baked into the image (s3://<artifacts>/java-app/<app_version>/app.jar)."
   type        = string
