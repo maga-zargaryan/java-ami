@@ -1,6 +1,8 @@
 # java-ami
 
 > Part of **[Java Platform](https://github.com/maga-zargaryan/java-platform)** · [infra-bootstrap](https://github.com/maga-zargaryan/infra-bootstrap) → [platform-infra](https://github.com/maga-zargaryan/platform-infra) → **java-ami** → [java-infra](https://github.com/maga-zargaryan/java-infra)
+>
+> See [java-platform](https://github.com/maga-zargaryan/java-platform) for how the four layers fit together.
 
 Immutable, patched base AMI for Java services, built by EC2 Image Builder in the
 private build VPC from platform-infra. It contains the runtime only: no
@@ -17,15 +19,6 @@ Amazon Linux 2023 arm64 (latest at build time)
 ```
 
 ## Diagrams
-
-### How the four repositories fit together
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/overview.dark.svg">
-  <img alt="How the four repositories fit together: Each layer builds on the one above it and hands its outputs to the next through SSM Parameter Store." src="docs/diagrams/overview.light.svg">
-</picture>
-
-Each layer builds on the one above it and hands its outputs to the next through SSM Parameter Store.
 
 ### Image pipeline
 
