@@ -1,6 +1,6 @@
 # java-ami
 
-> Part of **[Java Platform](https://github.com/maga-zargaryan/java-platform)** · [infra-bootstrap](https://github.com/maga-zargaryan/infra-bootstrap) → [platform-infra](https://github.com/maga-zargaryan/platform-infra) → **java-ami** → [java-infra](https://github.com/maga-zargaryan/java-infra)
+> Part of **[Java Platform](https://github.com/maga-zargaryan/java-platform)** · [java-app](https://github.com/maga-zargaryan/java-app) (source) · [infra-bootstrap](https://github.com/maga-zargaryan/infra-bootstrap) → [platform-infra](https://github.com/maga-zargaryan/platform-infra) → **java-ami** → [java-infra](https://github.com/maga-zargaryan/java-infra)
 >
 > See [java-platform](https://github.com/maga-zargaryan/java-platform) for how the four layers fit together.
 
