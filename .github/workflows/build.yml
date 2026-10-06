@@ -76,6 +76,7 @@ jobs:
 
       - name: Token for java-infra
         id: app-token
+        if: vars.RELEASE_APP_ID != ''
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           app-id: ${{ vars.RELEASE_APP_ID }}
@@ -84,6 +85,7 @@ jobs:
 
       # Dev is pinned to the new AMI by pull request; prod is promoted later from java-infra.
       - name: Open the dev pull request in java-infra
+        if: vars.RELEASE_APP_ID != ''
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           IMAGE_ARN: ${{ steps.start.outputs.image_arn }}
@@ -97,6 +99,10 @@ jobs:
           BRANCH="deploy/dev-$AMI_ID"
           git switch -c "$BRANCH"
           sed -i -E "s/^(ami_id *= *)\"[^\"]*\"/\1\"$AMI_ID\"/" terraform/environments/dev/terraform.tfvars
+          if git diff --quiet; then
+            echo "::notice::java-infra dev does not pin ami_id yet (or already runs $AMI_ID); set it once by hand"
+            exit 0
+          fi
           git -c user.name="java-platform-release[bot]" -c user.email="java-platform-release[bot]@users.noreply.github.com" \
             commit -qam "Deploy app AMI $AMI_ID (java-app $APP_VERSION) to dev"
           git push --quiet origin "$BRANCH"
