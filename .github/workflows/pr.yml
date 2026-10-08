@@ -43,6 +43,11 @@ jobs:
           terraform -chdir=terraform init -backend=false -lockfile=readonly
           terraform -chdir=terraform validate
 
+      - name: Components
+        run: |
+          python3 -c 'import yaml' 2>/dev/null || sudo apt-get install -y -qq python3-yaml
+          python3 .github/scripts/check-components.py
+
       - name: Lint
         run: |
           tflint --init
