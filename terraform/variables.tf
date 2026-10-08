@@ -38,6 +38,37 @@ variable "recipe_version" {
   }
 }
 
+variable "git_commit" {
+  description = "java-ami commit the image definition was applied from; tagged on every AMI for traceability. Set by CI."
+  type        = string
+  default     = "local"
+}
+
+variable "app_commit" {
+  description = "java-app commit the baked release was built from (set by the java-app release pull request)."
+  type        = string
+}
+
+variable "app_version" {
+  description = "Application release baked into the image (s3://<artifacts>/java-app/<app_version>/app.jar)."
+  type        = string
+
+  validation {
+    condition     = can(regex("^\\d+\\.\\d+\\.\\d+$", var.app_version))
+    error_message = "app_version must be a semantic version (major.minor.patch)."
+  }
+}
+
+variable "app_component_version" {
+  description = "Semantic version of the java-app component. Bump it on every change to components/java-app.yml."
+  type        = string
+
+  validation {
+    condition     = can(regex("^\\d+\\.\\d+\\.\\d+$", var.app_component_version))
+    error_message = "app_component_version must be a semantic version (major.minor.patch)."
+  }
+}
+
 variable "component_version" {
   description = "Semantic version of the Java runtime component. Components are immutable: bump it on every change."
   type        = string

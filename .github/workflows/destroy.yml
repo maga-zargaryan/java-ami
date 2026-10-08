@@ -11,7 +11,7 @@ on:
         type: string
         required: true
       delete_images:
-        description: Also deregister all java-base AMIs and delete their snapshots
+        description: Also deregister all java-app AMIs and delete their snapshots
         type: boolean
         default: true
 
@@ -52,7 +52,7 @@ jobs:
         if: inputs.delete_images
         run: |
           for AMI in $(aws ec2 describe-images --owners self \
-              --filters Name=tag:Project,Values=java-platform Name=tag:Image,Values=java-base \
+              --filters Name=tag:Project,Values=java-platform Name=tag:Image,Values=java-app \
               --query 'Images[].ImageId' --output text); do
             SNAPSHOTS=$(aws ec2 describe-images --image-ids "$AMI" \
               --query 'Images[].BlockDeviceMappings[].Ebs.SnapshotId' --output text)

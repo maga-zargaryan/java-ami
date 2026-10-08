@@ -1,16 +1,30 @@
 resource "aws_imagebuilder_image_recipe" "this" {
   name         = var.image_name
-  description  = "Amazon Linux 2023 (${var.architecture}) with Java ${var.java_version} runtime"
+  description  = "Java application ${var.app_version} on Amazon Linux 2023 (${var.architecture}), Java ${var.java_version}"
   parent_image = local.parent_image
   version      = var.recipe_version
 
-  # Patch first, then install the runtime, then prove the image survives a reboot.
+  # Patch first, then install the runtime, then bake in the release, then prove the image survives a reboot.
   component {
     component_arn = local.aws_component.update_linux
   }
 
   component {
     component_arn = aws_imagebuilder_component.java_runtime.arn
+  }
+
+  component {
+    component_arn = aws_imagebuilder_component.java_app.arn
+
+    parameter {
+      name  = "AppVersion"
+      value = var.app_version
+    }
+
+    parameter {
+      name  = "ArtifactsBucket"
+      value = data.aws_ssm_parameter.artifacts_bucket.insecure_value
+    }
   }
 
   component {
