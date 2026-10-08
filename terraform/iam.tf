@@ -26,6 +26,21 @@ resource "aws_iam_role_policy_attachment" "build_instance" {
   policy_arn = "arn:${local.partition}:iam::aws:policy/${each.value}"
 }
 
+# The build bakes the release JAR in, so it reads the artifacts bucket.
+resource "aws_iam_role_policy" "build_instance_artifacts" {
+  name = "read-release-artifacts"
+  role = aws_iam_role.build_instance.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid      = "ReadReleases"
+      Effect   = "Allow"
+      Action   = ["s3:GetObject"]
+      Resource = "arn:${local.partition}:s3:::${data.aws_ssm_parameter.artifacts_bucket.insecure_value}/java-app/*"
+    }]
+  })
+}
+
 resource "aws_iam_instance_profile" "build_instance" {
   name = "java-ami-build-instance"
   role = aws_iam_role.build_instance.name

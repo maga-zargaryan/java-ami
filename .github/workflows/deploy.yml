@@ -24,6 +24,7 @@ env:
   TERRAFORM_VERSION: "1.15.8"
   TF_IN_AUTOMATION: "true"
   TF_INPUT: "false"
+  TF_VAR_git_commit: ${{ github.sha }}
 
 jobs:
   apply:

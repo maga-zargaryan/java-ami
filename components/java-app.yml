@@ -1,0 +1,186 @@
+name: java-app
+description: Bakes a release of the Java application into the image, with its services and boot-time configuration
+schemaVersion: 1.0
+
+parameters:
+  - AppVersion:
+      type: string
+      description: Release to bake in (s3://<ArtifactsBucket>/java-app/<AppVersion>/app.jar)
+  - ArtifactsBucket:
+      type: string
+      description: Bucket holding release artifacts
+
+phases:
+  - name: build
+    steps:
+      - name: CreateServiceAccount
+        action: ExecuteBash
+        inputs:
+          commands:
+            - set -euo pipefail
+            - id -u javaapp >/dev/null 2>&1 || useradd --system --uid 1001 --no-create-home --shell /sbin/nologin javaapp
+            - install -d -o javaapp -g javaapp -m 0750 /opt/java-app /var/log/java-app
+            - install -d -m 0755 /etc/java-app /mnt/data
+
+      - name: InstallRelease
+        action: ExecuteBash
+        inputs:
+          commands:
+            - set -euo pipefail
+            # Regional S3 endpoint only: the build subnet reaches S3 through the regional gateway endpoint.
+            - TOKEN=$(curl -sS -X PUT http://169.254.169.254/latest/api/token -H "X-aws-ec2-metadata-token-ttl-seconds: 300")
+            - REGION=$(curl -sS -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/region)
+            - aws s3 cp --region "$REGION" --only-show-errors "s3://{{ ArtifactsBucket }}/java-app/{{ AppVersion }}/app.jar" /opt/java-app/app.jar
+            - aws s3 cp --region "$REGION" --only-show-errors "s3://{{ ArtifactsBucket }}/java-app/{{ AppVersion }}/app.jar.sha256" /opt/java-app/app.jar.sha256
+            - cd /opt/java-app && echo "$(cut -d' ' -f1 app.jar.sha256)  app.jar" | sha256sum --check --strict
+            - chown javaapp:javaapp /opt/java-app/app.jar && chmod 0440 /opt/java-app/app.jar
+            - echo "{{ AppVersion }}" > /etc/java-app/version
+
+      - name: InstallBootConfiguration
+        action: CreateFile
+        inputs:
+          - path: /usr/local/bin/java-app-configure
+            permissions: 755
+            owner: root
+            group: root
+            content: |
+              #!/bin/bash
+              # Configures this instance for its environment at boot. Nothing is passed in:
+              # the environment comes from the instance's Environment tag, the values from
+              # SSM Parameter Store under /java-platform/<environment>/app/.
+              set -euo pipefail
+              TOKEN=$(curl -sS -X PUT http://169.254.169.254/latest/api/token -H "X-aws-ec2-metadata-token-ttl-seconds: 300")
+              md() { curl -sSf -H "X-aws-ec2-metadata-token: $TOKEN" "http://169.254.169.254/latest/$1"; }
+              ENVIRONMENT=$(md meta-data/tags/instance/Environment)
+              REGION=$(md meta-data/placement/region)
+              get() { aws ssm get-parameter --region "$REGION" --name "/java-platform/$ENVIRONMENT/app/$1" --query Parameter.Value --output text; }
+
+              cat > /etc/java-app/app.env <<EOF
+              APP_ENVIRONMENT=$ENVIRONMENT
+              APP_VERSION=$(cat /etc/java-app/version)
+              AWS_REGION=$REGION
+              SERVER_PORT=$(get server_port)
+              DATA_DIR=/mnt/data
+              DB_HOST=$(get db_host)
+              DB_PORT=$(get db_port)
+              DB_NAME=$(get db_name)
+              DB_SECRET_ARN=$(get db_secret_arn)
+              JAVA_OPTS=$(get java_opts)
+              EOF
+              chmod 0644 /etc/java-app/app.env
+
+              # Shared storage: TLS in transit, IAM authorization, scoped access point.
+              if ! grep -q " /mnt/data " /etc/fstab; then
+                echo "$(get efs_id):/ /mnt/data efs _netdev,noresvport,tls,iam,accesspoint=$(get efs_access_point_id) 0 0" >> /etc/fstab
+              fi
+              mountpoint -q /mnt/data || mount /mnt/data
+
+              # Ship application logs and memory/disk metrics to this environment's log group.
+              sed "s|__LOG_GROUP__|$(get log_group)|" /etc/java-app/cloudwatch-agent.json \
+                > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+              /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s \
+                -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+          - path: /etc/java-app/cloudwatch-agent.json
+            permissions: 644
+            owner: root
+            group: root
+            content: |
+              {
+                "agent": { "run_as_user": "root" },
+                "logs": {
+                  "logs_collected": {
+                    "files": {
+                      "collect_list": [
+                        { "file_path": "/var/log/java-app/app.log", "log_group_name": "__LOG_GROUP__",
+                          "log_stream_name": "{instance_id}", "retention_in_days": -1 }
+                      ]
+                    }
+                  }
+                },
+                "metrics": {
+                  "namespace": "CWAgent",
+                  "append_dimensions": { "AutoScalingGroupName": "${aws:AutoScalingGroupName}" },
+                  "aggregation_dimensions": [["AutoScalingGroupName"]],
+                  "metrics_collected": {
+                    "mem": { "measurement": ["mem_used_percent"] },
+                    "disk": { "measurement": ["used_percent"], "resources": ["/"] }
+                  }
+                }
+              }
+          - path: /etc/systemd/system/java-app-configure.service
+            permissions: 644
+            owner: root
+            group: root
+            content: |
+              [Unit]
+              Description=Configure the Java application for this environment
+              Wants=network-online.target
+              After=network-online.target
+
+              [Service]
+              Type=oneshot
+              RemainAfterExit=yes
+              ExecStart=/usr/local/bin/java-app-configure
+
+              [Install]
+              WantedBy=multi-user.target
+          - path: /etc/systemd/system/java-app.service
+            permissions: 644
+            owner: root
+            group: root
+            content: |
+              [Unit]
+              Description=Java application
+              Requires=java-app-configure.service
+              After=java-app-configure.service remote-fs.target
+
+              [Service]
+              Type=simple
+              User=javaapp
+              Group=javaapp
+              EnvironmentFile=/etc/java-app/app.env
+              ExecStart=/bin/sh -c 'exec /usr/bin/java $JAVA_OPTS -Dserver.port=$SERVER_PORT -jar /opt/java-app/app.jar'
+              Restart=always
+              RestartSec=5
+              SuccessExitStatus=143
+              StandardOutput=append:/var/log/java-app/app.log
+              StandardError=append:/var/log/java-app/app.log
+              NoNewPrivileges=true
+              PrivateTmp=true
+              ProtectSystem=strict
+              ProtectHome=true
+              ReadWritePaths=/var/log/java-app /mnt/data
+
+              [Install]
+              WantedBy=multi-user.target
+
+      - name: EnableServices
+        action: ExecuteBash
+        inputs:
+          commands:
+            - systemctl daemon-reload
+            - systemctl enable java-app-configure.service java-app.service
+
+  - name: validate
+    steps:
+      - name: ValidateRelease
+        action: ExecuteBash
+        inputs:
+          commands:
+            - set -euo pipefail
+            - cd /opt/java-app && echo "$(cut -d' ' -f1 app.jar.sha256)  app.jar" | sha256sum --check --strict
+            - test "$(cat /etc/java-app/version)" = "{{ AppVersion }}"
+            - systemctl is-enabled java-app-configure.service java-app.service
+            - bash -n /usr/local/bin/java-app-configure
+
+  - name: test
+    steps:
+      - name: TestRelease
+        action: ExecuteBash
+        inputs:
+          commands:
+            - set -euo pipefail
+            - test -s /opt/java-app/app.jar
+            - systemctl is-enabled java-app-configure.service java-app.service
+            - test -x /usr/local/bin/java-app-configure
+            - test "$(stat -c %U /opt/java-app/app.jar)" = "javaapp"
