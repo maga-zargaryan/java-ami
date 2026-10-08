@@ -83,7 +83,7 @@ component YAML and/or `terraform/*.tf`, then bump `component_version` / `app_com
 
 | Workflow | Trigger | What it does |
 |---|---|---|
-| `pr.yml` | Pull request | fmt, validate, tflint, Trivy, read-only plan (skipped when nothing under `terraform/` or `components/` changed); `ci` is the required check |
+| `pr.yml` | Pull request | fmt, validate, component YAML check, tflint, Trivy, read-only plan (skipped when nothing under `terraform/` or `components/` changed); `ci` is the required check |
 | `deploy.yml` | Merge to `main` | apply, then run `build.yml` |
 | `build.yml` | Manual / called | start a pipeline execution and wait for `AVAILABLE` |
 | `destroy.yml` | Manual | destroy the pipeline and optionally deregister built AMIs |
