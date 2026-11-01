@@ -29,6 +29,8 @@ env:
 jobs:
   apply:
     name: apply
+    # A force push (history rewrite) looks like every file changed; never deploy on one.
+    if: ${{ !github.event.forced }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     environment: shared
